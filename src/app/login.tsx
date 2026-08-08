@@ -98,8 +98,10 @@ const LoginScreen = () => {
       } else {
         // Login with OTP
         const response = await authAPI.loginWithOTP(email, otp);
-        // Use setAuthData to store token and user
+        // Wait for token to be fully saved before navigating
         await setAuthData(response.token, response);
+        // Small delay to ensure AsyncStorage write is complete before navigation
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       router.replace('/tasks');
     } catch (error: any) {
