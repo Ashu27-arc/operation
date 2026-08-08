@@ -25,12 +25,14 @@ const api: AxiosInstance = axios.create({
   },
 });
 
+// Public endpoints that don't use auth tokens
+const PUBLIC_ENDPOINTS = ['/otp/send', '/otp/verify', '/auth/register', '/auth/login', '/auth/login-with-otp', '/auth/register-with-otp'];
+
 // Request interceptor to add token
 api.interceptors.request.use(
   async (config) => {
     // Skip token for public endpoints that don't require authentication
-    const publicEndpoints = ['/otp/send', '/otp/verify', '/auth/register', '/auth/login', '/auth/login-with-otp'];
-    const isPublicEndpoint = publicEndpoints.some(endpoint => config.url?.includes(endpoint));
+    const isPublicEndpoint = PUBLIC_ENDPOINTS.some(endpoint => config.url?.includes(endpoint));
 
     if (!isPublicEndpoint) {
       const token = await AsyncStorage.getItem('token');
@@ -47,9 +49,6 @@ api.interceptors.request.use(
   }
 );
 
-// Public endpoints that don't use auth tokens
-const PUBLIC_ENDPOINTS = ['/otp/send', '/otp/verify', '/auth/register', '/auth/login', '/auth/login-with-otp', '/auth/register-with-otp'];
-
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
@@ -63,6 +62,9 @@ api.interceptors.response.use(
     console.error('Error code:', error.code);
     console.error('Current API URL:', API_URL);
     console.error('Request URL:', requestUrl);
+    if (error.response?.data) {
+      console.error('Server Response Data:', JSON.stringify(error.response.data));
+    }
     
     if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
       console.error('Backend server is not running or not accessible');
