@@ -28,11 +28,17 @@ const api: AxiosInstance = axios.create({
 // Request interceptor to add token
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.log('No token found in storage for request:', config.method?.toUpperCase(), config.url);
+    // Skip token for public endpoints that don't require authentication
+    const publicEndpoints = ['/otp/send', '/otp/verify', '/auth/register', '/auth/login', '/auth/login-with-otp'];
+    const isPublicEndpoint = publicEndpoints.some(endpoint => config.url?.includes(endpoint));
+
+    if (!isPublicEndpoint) {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        console.log('No token found in storage for request:', config.method?.toUpperCase(), config.url);
+      }
     }
     return config;
   },
