@@ -47,36 +47,56 @@ api.interceptors.request.use(
   }
 );
 
+// Public endpoints that don't use auth tokens
+const PUBLIC_ENDPOINTS = ['/otp/send', '/otp/verify', '/auth/register', '/auth/login', '/auth/login-with-otp', '/auth/register-with-otp'];
+
 // Response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   async (error: AxiosError) => {
-    console.error('API Error:', error);
+    const requestUrl = error.config?.url || '';
+    const isPublicEndpoint = PUBLIC_ENDPOINTS.some(endpoint => requestUrl.includes(endpoint));
+
+    console.error('API Error:', error.message);
     console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
     console.error('Current API URL:', API_URL);
+    console.error('Request URL:', requestUrl);
     
     if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
       console.error('Backend server is not running or not accessible');
-      console.error('Make sure backend is running on:', API_URL);
       const networkError = new Error('Backend server is not running. Please start the server.');
       (networkError as any).response = { data: { message: 'Backend server is not running. Please start the server.' } };
       return Promise.reject(networkError);
     }
     
     if (error.response?.status === 401) {
-      // Token expired or invalid, clear storage
-      console.log('401 Unauthorized - Clearing auth data');
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('user');
-      
-      // Add custom error message for better user experience
-      const authError = new Error('Session expired. Please login again.');
-      (authError as any).response = error.response;
-      (authError as any).isAuthError = true;
-      return Promise.reject(authError);
+      // Only clear auth data for PROTECTED endpoints, NOT for public ones like OTP/login
+      if (!isPublicEndpoint) {
+        console.log('401 Unauthorized on protected route - Clearing auth data');
+        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('user');
+        
+        // Check if this is a token validation error (JWT_SECRET mismatch)
+        const responseData = error.response.data as any;
+        if (responseData?.code === 'INVALID_TOKEN' || responseData?.code === 'AUTH_FAILED') {
+          console.log('Token validation failed - likely JWT_SECRET changed on server');
+          const authError = new Error('Server configuration changed. Please login again.');
+          (authError as any).response = error.response;
+          (authError as any).isAuthError = true;
+          (authError as any).needsReauth = true;
+          return Promise.reject(authError);
+        }
+        
+        const authError = new Error('Session expired. Please login again.');
+        (authError as any).response = error.response;
+        (authError as any).isAuthError = true;
+        return Promise.reject(authError);
+      } else {
+        // Public endpoint pe 401 aaye to seedha error propagate karo (user ko clear message milega)
+        console.log('401 on public endpoint - not clearing auth data:', requestUrl);
+      }
     }
     
     return Promise.reject(error);

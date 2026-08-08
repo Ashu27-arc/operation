@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.aarush028.operation",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,7 +40,12 @@
       "reactCompiler": true
     },
     "extra": {
-      "API_URL": "http://192.168.0.104:5000/api"
-    }
+      "API_URL": "http://192.168.0.104:5000/api",
+      "router": {},
+      "eas": {
+        "projectId": "e239cac1-6298-442d-921d-366fd2ae69e9"
+      }
+    },
+    "owner": "aarush028"
   }
 }
