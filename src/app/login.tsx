@@ -109,6 +109,14 @@ const LoginScreen = () => {
         errorMessage = 'Session expired. Please login again.';
       } else if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
         errorMessage = 'Backend server is not running. Please start the server.';
+      } else if (error.response?.status === 404) {
+        // No account found with this email
+        errorMessage = error.response?.data?.message || 'No account found with this email. Please register first.';
+        setOtpSent(false); // Reset so user can try different email
+        setOtp('');
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.message || 'Invalid or expired OTP. Please request a new one.';
+        setOtp('');
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
