@@ -35,8 +35,11 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
+      "typedRoutes": false,
       "reactCompiler": true
+    },
+    "extra": {
+      "API_URL": "http://192.168.0.104:5000/api"
     }
   }
 }
